@@ -1,0 +1,21 @@
+# Swift / SwiftPM
+.build/
+*.xcodeproj
+.swiftpm/
+
+# Built app bundle
+*.app/
+
+# Generated character art (generate your own; don't commit)
+preview/
+
+# Python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Secrets — never commit your API key
+.env
+*.key

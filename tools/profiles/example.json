@@ -1,0 +1,28 @@
+{
+  "slug": "example",
+  "display_name": "Blobby",
+  "done_sound": "Hero",
+  "full_name": "Blobby, an original friendly round slime mascot (NOT based on any existing character)",
+  "appearance": [
+    "Small round chibi slime with a soft rounded body, about as wide as tall",
+    "Glossy translucent sky-blue body with a lighter highlight near the top",
+    "Two big round friendly eyes with white shine dots, small simple smiling mouth",
+    "Tiny stubby arms on the sides, no legs (slides/hops to move)",
+    "A small white star floating just above the head",
+    "Clean cartoon outline, bright cheerful colors"
+  ],
+  "quick_visual": "round sky-blue translucent slime, big shiny eyes, small smile, tiny arms, white star above head",
+  "idle_pose": "sitting relaxed with tiny arms at sides, gentle happy smile",
+  "expression_default": "gentle happy smile",
+  "complexity": "low",
+  "battle_stance": "Slightly squished down and leaning forward, eyes focused, ready to bounce",
+  "signature_pose": "squished down low, tiny arms raised, gathering energy",
+  "signature_power_small": "SMALL white star sparkles starting to gather around the body",
+  "signature_power_medium": "MEDIUM ring of white and cyan sparkles orbiting the body, gentle glow",
+  "signature_power_full": "FULL bright cyan sparkle aura with orbiting stars around the whole body, face still clearly visible",
+  "done_gesture_short": "happy bounce",
+  "done_celebration_pose": "Bouncing up high with tiny arms thrown up, big open happy smile, eyes squinted with joy",
+  "done_celebration_effect": "small white stars and cyan sparkles scattered around as celebration",
+  "has_cape": false,
+  "cape_motion": ""
+}

@@ -1,0 +1,4 @@
+公共版不内置任何角色 sprite。
+你用 tools/ 里的 pipeline 生成的角色会装到:
+  ~/Library/Application Support/DeskPet/characters/<slug>/
+不需要往这个目录放东西。详见仓库根目录 README。
