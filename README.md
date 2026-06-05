@@ -8,9 +8,10 @@ A tiny macOS desktop pet that **reacts to your Claude Code / Codex sessions** �
 
 ## Features
 
-- **Lives on your desktop** — idle breathing, blinking, wandering, auto-sleep when you're away.
+- **Lives on your desktop** — idle breathing, blinking, calm wandering (it only shuffles around near its spot, so it won't march across your input box), auto-sleep when you're away.
 - **Reacts to your AI agent** — via local HTTP hooks: enters a "thinking" state while your agent works, celebrates on finish, and shows a hover **task list** of active sessions you can click to jump back to.
-- **Edge dock (mini mode)** — drag it to a screen edge and it clings on like it's peeking around the corner; hover to peek out + see the task list.
+- **Click-through except the character** — the window only intercepts clicks/hovers on the pet's actual pixels (per-pixel alpha hit-testing), so the transparent space around it never blocks the app underneath.
+- **Edge dock (mini mode)** — drag it to a screen edge and it peeks around the corner (head + face stay visible, not just a sliver); hover to peek out, and the task list slides out to the **side that faces the screen interior** rather than over its head.
 - **Fishbowl quick-launcher** — click the pet (or `⌘⌥M`) to open a "slack off" menu of sites in an **isolated Chrome profile**, so your fun browsing never pollutes your work tabs/logins. Sites are editable in-app.
 - **EN / ZH** — UI auto-adapts to your system language, with a manual toggle in the menu.
 
