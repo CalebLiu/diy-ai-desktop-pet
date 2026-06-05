@@ -57,6 +57,25 @@ final class PetController: ObservableObject {
     weak var window: NSWindow?
     var petSize = NSSize(width: 130, height: 156)   // 角色实际尺寸
     var windowSize = NSSize(width: 240, height: 340) // 窗口含气泡/任务列表区域
+    /// Mini mode 时窗口朝屏幕内侧额外加宽的宽度,给侧边任务栏/气泡留空间
+    let miniPanelWidth: CGFloat = 230
+
+    /// Mini mode 下窗口加宽(留侧边面板空间);非 mini 用原始尺寸
+    var effectiveWindowSize: NSSize {
+        isMiniMode
+            ? NSSize(width: windowSize.width + miniPanelWidth, height: windowSize.height)
+            : windowSize
+    }
+    /// 角色在(可能加宽的)窗口里的水平偏移:mini 时锚到贴边那一侧,非 mini 居中
+    var petXOffset: CGFloat {
+        guard isMiniMode else { return 0 }
+        return miniEdge == .right ? miniPanelWidth / 2 : -miniPanelWidth / 2
+    }
+    /// 侧边任务栏/气泡相对窗口中心的水平偏移:mini 时朝屏幕内侧(贴右→面板在左,反之亦然)
+    var panelXOffset: CGFloat {
+        guard isMiniMode else { return 0 }
+        return miniEdge == .right ? -windowSize.width / 2 : windowSize.width / 2
+    }
     private var floorY: CGFloat = 100
 
     // MARK: - 定时器
@@ -98,8 +117,9 @@ final class PetController: ObservableObject {
     /// 拖动结束时,距屏幕边小于此阈值就吸附进 mini mode
     private let edgeSnapThreshold: CGFloat = 70
     /// Mini mode 隐藏时,留在屏幕内的窗口宽度。
-    /// 窗口内角色居中,左右各有 ~55px 空白。这里取 100 让角色左/右 ~45px 真正露出来。
-    private let peekVisibleWidth: CGFloat = 100
+    /// 角色在其 240 区里居中(左右各 ~55px 空白),屏幕内露出量 = peekVisibleWidth - 55。
+    /// 取 135 → 露出 ~80px,能看清头+脸(不只剩一撮头发),hover 热区也够大好探出。
+    private let peekVisibleWidth: CGFloat = 135
 
     private var peekHideTimer: Timer?
     private var parabolaTimer: Timer?
@@ -213,7 +233,7 @@ final class PetController: ObservableObject {
     private func scheduleNextWalk() {
         walkScheduleTimer?.invalidate()
         if isMiniMode { return }   // mini mode 下不安排走动
-        let interval = Double.random(in: 12...25)
+        let interval = Double.random(in: 30...60)   // 克制:降低自动走动频率
         walkScheduleTimer = makeTimer(after: interval) { [weak self] in
             self?.startWalk()
         }
@@ -226,10 +246,11 @@ final class PetController: ObservableObject {
         }
         let minX = screen.frame.minX + 30
         let maxX = screen.frame.maxX - windowSize.width - 30
-        var target = CGFloat.random(in: minX...maxX)
-        if abs(target - positionX) < 80 {
-            target = (positionX < (minX + maxX) / 2) ? maxX : minX
-        }
+        // 克制走动:只在当前位置附近一小段范围内晃,不再横穿屏幕(避免窜到屏幕中间挡住输入框)
+        let roam: CGFloat = 160
+        let lo = max(minX, positionX - roam)
+        let hi = min(maxX, positionX + roam)
+        let target = hi > lo ? CGFloat.random(in: lo...hi) : positionX
         walkTarget = target
         walkSpeed = target > positionX ? 0.7 : -0.7
         facing = target > positionX ? .right : .left
@@ -559,8 +580,8 @@ final class PetController: ObservableObject {
 
     private func enterMiniMode(edge: MiniEdge) {
         guard let screen = NSScreen.main else { return }
+        miniEdge = edge          // 先定边,effectiveWindowSize/petXOffset 才算得对
         isMiniMode = true
-        miniEdge = edge
         isPeeking = false
         // 停 walk + 走动相关
         walkAnimator?.invalidate(); walkAnimator = nil
@@ -571,8 +592,10 @@ final class PetController: ObservableObject {
         if state != .idle { state = .idle }
         // 朝屏幕内
         facing = (edge == .right) ? .left : .right
-        positionX = hiddenOrigin(screen: screen, edge: edge).x
-        animateWindow(to: hiddenOrigin(screen: screen, edge: edge), duration: 0.32)
+        let origin = hiddenOrigin(screen: screen, edge: edge)
+        positionX = origin.x
+        // 连窗口宽度一起动画(加宽出侧边面板空间)
+        animateWindowFrame(to: NSRect(origin: origin, size: effectiveWindowSize), duration: 0.32)
     }
 
     private func exitMiniMode() {
@@ -585,14 +608,17 @@ final class PetController: ObservableObject {
             ? screen.frame.maxX - windowSize.width - 30
             : screen.frame.minX + 30
         positionX = safeX
-        animateWindow(to: NSPoint(x: safeX, y: floorY), duration: 0.3)
+        // isMiniMode 已置 false → effectiveWindowSize 回到窄窗,连尺寸一起还原
+        animateWindowFrame(to: NSRect(origin: NSPoint(x: safeX, y: floorY), size: effectiveWindowSize), duration: 0.3)
         scheduleNextWalk()
     }
 
+    // 窗口加宽后,角色锚在贴边那一侧(右:窗口右 windowSize 区;左:窗口左 windowSize 区),
+    // 面板占内侧的 miniPanelWidth。origin 相比窄窗版本:贴右整体左移 miniPanelWidth,贴左不变。
     private func hiddenOrigin(screen: NSScreen, edge: MiniEdge) -> NSPoint {
         switch edge {
         case .right:
-            return NSPoint(x: screen.frame.maxX - peekVisibleWidth, y: floorY)
+            return NSPoint(x: screen.frame.maxX - peekVisibleWidth - miniPanelWidth, y: floorY)
         case .left:
             return NSPoint(x: screen.frame.minX - windowSize.width + peekVisibleWidth, y: floorY)
         }
@@ -601,7 +627,7 @@ final class PetController: ObservableObject {
     private func shownOrigin(screen: NSScreen, edge: MiniEdge) -> NSPoint {
         switch edge {
         case .right:
-            return NSPoint(x: screen.frame.maxX - windowSize.width, y: floorY)
+            return NSPoint(x: screen.frame.maxX - windowSize.width - miniPanelWidth, y: floorY)
         case .left:
             return NSPoint(x: screen.frame.minX, y: floorY)
         }
@@ -613,6 +639,16 @@ final class PetController: ObservableObject {
             ctx.duration = duration
             ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
             window.animator().setFrameOrigin(origin)
+        }
+    }
+
+    /// 同时动画窗口的位置和尺寸(进/出 mini mode 时窗口要加宽/还原)
+    private func animateWindowFrame(to frame: NSRect, duration: TimeInterval) {
+        guard let window = self.window else { return }
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = duration
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            window.animator().setFrame(frame, display: true)
         }
     }
 

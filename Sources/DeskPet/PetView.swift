@@ -15,6 +15,8 @@ struct PetView: View {
             petSprite
                 .scaleEffect(tapBounce)
                 .offset(y: walkBobY)
+                // Mini mode 下窗口加宽,把角色锚到贴边那一侧;非 mini 偏移为 0(居中)
+                .offset(x: controller.petXOffset)
                 // Mini mode 下不翻转,让 peek_<edge> sprite 按原画呈现;否则跟随 facing
                 .scaleEffect(x: controller.isMiniMode ? 1 : controller.facing.flipScale, y: 1)
                 .scaleEffect(CGSize(width: 1.0, height: breathScaleY), anchor: .bottom)
@@ -45,8 +47,10 @@ struct PetView: View {
                     sessions: controller.sessions,
                     onSelect: { controller.activateSession($0) }
                 )
-                .frame(maxWidth: controller.windowSize.width - 16)
-                .offset(y: -(controller.petSize.height + 4))
+                .frame(maxWidth: (controller.isMiniMode ? controller.miniPanelWidth : controller.windowSize.width) - 16)
+                // Mini mode:放到角色朝屏幕内侧的一边(贴右→左侧,贴左→右侧),与角色齐底;否则头顶
+                .offset(x: controller.panelXOffset,
+                        y: controller.isMiniMode ? 0 : -(controller.petSize.height + 4))
                 .onHover { hovering in
                     if hovering { controller.hoverEnter() } else { controller.hoverExit() }
                 }
@@ -58,8 +62,9 @@ struct PetView: View {
             // 普通气泡(列表没显示时才显示)
             else if let bubble = controller.taskBubbleText {
                 TaskBubble(text: bubble)
-                    .frame(maxWidth: controller.windowSize.width - 20)
-                    .offset(y: -(controller.petSize.height + 4))
+                    .frame(maxWidth: (controller.isMiniMode ? controller.miniPanelWidth : controller.windowSize.width) - 20)
+                    .offset(x: controller.panelXOffset,
+                            y: controller.isMiniMode ? 0 : -(controller.petSize.height + 4))
                     .transition(.asymmetric(
                         insertion: .scale(scale: 0.6, anchor: .bottom).combined(with: .opacity),
                         removal: .opacity
@@ -67,7 +72,7 @@ struct PetView: View {
                     .allowsHitTesting(false)
             }
         }
-        .frame(width: controller.windowSize.width, height: controller.windowSize.height, alignment: .bottom)
+        .frame(width: controller.effectiveWindowSize.width, height: controller.effectiveWindowSize.height, alignment: .bottom)
         .animation(.spring(response: 0.32, dampingFraction: 0.7), value: controller.taskBubbleText)
         .animation(.spring(response: 0.28, dampingFraction: 0.75), value: controller.showTaskList)
         .onAppear {
